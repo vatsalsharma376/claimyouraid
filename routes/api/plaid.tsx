@@ -14,11 +14,11 @@ const Company = require("../../models/Company");
 const Transaction = require("../../models/Transaction");
 var CompanyId;
 const configuration = new Configuration({
-  basePath: PlaidEnvironments["sandbox"],
+  basePath: PlaidEnvironments[process.env.type],
   baseOptions: {
     headers: {
-      "PLAID-CLIENT-ID": "62449f9f9f9f9f9f9f9",
-      "PLAID-SECRET": "da652c9ffffffffffffffff",
+      "PLAID-CLIENT-ID": process.env.CLIENTID,
+      "PLAID-SECRET": process.env.SECRET,
     },
   },
 });
