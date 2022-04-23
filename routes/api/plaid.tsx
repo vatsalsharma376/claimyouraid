@@ -11,13 +11,14 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const Account = require("../../models/Account");
 const User = require("../../models/User");
 const Company = require("../../models/Company");
+const Transaction = require("../../models/Transaction");
 var CompanyId;
 const configuration = new Configuration({
-  basePath: PlaidEnvironments["development"],
+  basePath: PlaidEnvironments["sandbox"],
   baseOptions: {
     headers: {
-      "PLAID-CLIENT-ID": "62440a71a1f92500132351e4",
-      "PLAID-SECRET": "4bef8b9414bd32a39cba039d48b938",
+      "PLAID-CLIENT-ID": "62449f9f9f9f9f9f9f9",
+      "PLAID-SECRET": "da652c9ffffffffffffffff",
     },
   },
 });
@@ -85,6 +86,7 @@ router.post(
     console.log(req.body);
     const userId = req.user.id;
     const institution = req.body.metadata.institution;
+    const comId = req.body.companyId;
     const { name, institution_id } = institution;
 
     const publicToken = req.body.public_token;
@@ -107,7 +109,7 @@ router.post(
                 console.log("Account already exists");
               } else {
                 const newAccount = new Account({
-                  companyId: CompanyId,
+                  companyId: comId,
                   userId: userId,
                   accessToken: ACCESS_TOKEN,
                   itemId: ITEM_ID,
@@ -115,7 +117,44 @@ router.post(
                   institutionName: name,
                 });
 
-                newAccount.save().then((account) => res.json(account));
+                newAccount.save().then((account) => {
+                  res.json(account);
+                  const now = moment();
+                  const today = now.format("YYYY-MM-DD");
+                  const thirtyDaysAgo = now
+                    .subtract(30, "days")
+                    .format("YYYY-MM-DD");
+                  const txnreq = {
+                    access_token: response.data.access_token,
+                    start_date: thirtyDaysAgo,
+                    end_date: today,
+                  };
+                  //let transactions = [];
+                  client.transactionsGet(txnreq).then((response) => {
+                    //console.log(response); response.data.transactions = an array of transaction objects
+                    let transaction1 = response.data.transactions;
+                    for (var i = 0; i < transaction1.length; i++) {
+                      const transaction = new Transaction({
+                        userId: userId,
+                        accountId: newAccount._id,
+                        accessToken: newAccount.accessToken,
+                        accountname: name,
+                        name: transaction1[i].name,
+                        amount: transaction1[i].amount,
+                        txndate: transaction1[i].date,
+                        category: transaction1[i].category[0],
+                      });
+                      transaction
+                        .save()
+                        .then((response) => {
+                          console.log("success");
+                        })
+                        .catch((err) => {
+                          console.log(err);
+                        });
+                    }
+                  });
+                });
               }
             })
             .catch((err) => {
@@ -124,6 +163,8 @@ router.post(
         }
       };
       await mungu();
+
+      // adding transactions to newly created accounts
     } catch (error) {
       // handle error
       console.log("acces token exchange erro");

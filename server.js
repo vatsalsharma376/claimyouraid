@@ -10,7 +10,6 @@ const app = express();
 
   const path = require('path');
 // Bodyparser middleware
-app.use ( express.static("client/build"));
 app.use(
   bodyParser.urlencoded({
     extended: false
@@ -18,7 +17,7 @@ app.use(
 );
 app.use(bodyParser.json());
 
-// DB Confi
+// DB Config
 const db = require("./config/keys").mongoURI;
 
 // Connect to MongoDB
@@ -27,7 +26,7 @@ mongoose
     db,
     { useNewUrlParser: true }
   )
-  .then(() => console.log("MongoDB successfully connected"))
+  .then(() => console.log("MongoDB successfully is rooted connected"))
   .catch(err => console.log(err));
 
 // Passport middleware
@@ -42,7 +41,5 @@ app.use("/api/plaid", plaid);
 
 
 const port = process.env.PORT || 5000;
-app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "client", "build", "index.html"));
-});
+
 app.listen(port, () => console.log(`Server up and running on port ${port} !`));
