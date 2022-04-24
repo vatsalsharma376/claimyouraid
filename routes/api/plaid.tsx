@@ -14,7 +14,7 @@ const Company = require("../../models/Company");
 const Transaction = require("../../models/Transaction");
 var CompanyId;
 const configuration = new Configuration({
-  basePath: PlaidEnvironments[process.env.type],
+  basePath: PlaidEnvironments["development"],
   baseOptions: {
     headers: {
       "PLAID-CLIENT-ID": process.env.CLIENTID,
