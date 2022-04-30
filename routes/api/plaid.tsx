@@ -121,13 +121,14 @@ router.post(
                   res.json(account);
                   const now = moment();
                   const today = now.format("YYYY-MM-DD");
-                  const thirtyDaysAgo = now
-                    .subtract(30, "days")
-                    .format("YYYY-MM-DD");
+                  const twoYearsAgo = now.subtract(2, "years").format("YYYY-MM-DD");
                   const txnreq = {
                     access_token: response.data.access_token,
-                    start_date: "2021-01-01",
+                    start_date: twoYearsAgo,
                     end_date: today,
+                    options: {
+                      count: 500,
+                    },
                   };
                   //let transactions = [];
                   client.transactionsGet(txnreq).then((response) => {
