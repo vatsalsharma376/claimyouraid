@@ -148,7 +148,7 @@ router.post(
                       transaction
                         .save()
                         .then((response) => {
-                          console.log("success");
+                          console.log(response);
                         })
                         .catch((err) => {
                           console.log(err);
