@@ -5,6 +5,7 @@ const router = express.Router();
 const passport = require("passport");
 const moment = require("moment");
 const http = require("http");
+const MongoClient = require("mongodb").MongoClient;
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 // import fetch from "node-fetch";
 // Load Account and User models
@@ -22,6 +23,17 @@ const configuration = new Configuration({
     },
   },
 });
+const userURI =
+  "mongodb+srv://claimyouraid:cya@cluster0.kfgzq.mongodb.net/?retryWrites=true&w=majority";
+const connectToCluster = async (uri) => {
+  try {
+    let mongoClient = new MongoClient(uri);
+    await mongoClient.connect();
+    return mongoClient;
+  } catch (err) {
+    console.error("Connection to MongoDB Atlas failed!", err);
+  }
+};
 
 const client = new PlaidApi(configuration);
 var uniq;
@@ -97,6 +109,9 @@ router.post(
       const response = await client.itemPublicTokenExchange(request);
       ACCESS_TOKEN = await response.data.access_token;
       ITEM_ID = await response.data.item_id;
+      const mongoClient = await connectToCluster(userURI);
+      const db1 = await mongoClient.db("Cluster0");
+      const txncoll = await db1.collection("transactions");
       await console.log(response.data);
       const mungu = async () => {
         if (PUBLIC_TOKEN) {
@@ -121,7 +136,9 @@ router.post(
                   res.json(account);
                   const now = moment();
                   const today = now.format("YYYY-MM-DD");
-                  const twoYearsAgo = now.subtract(2, "years").format("YYYY-MM-DD");
+                  const twoYearsAgo = now
+                    .subtract(2, "years")
+                    .format("YYYY-MM-DD");
                   const txnreq = {
                     access_token: response.data.access_token,
                     start_date: twoYearsAgo,
@@ -131,11 +148,12 @@ router.post(
                     },
                   };
                   //let transactions = [];
+                  var alltxn = [];
                   client.transactionsGet(txnreq).then((response) => {
                     //console.log(response); response.data.transactions = an array of transaction objects
                     let transaction1 = response.data.transactions;
                     for (var i = 0; i < transaction1.length; i++) {
-                      const transaction = new Transaction({
+                      alltxn.push({
                         userId: userId,
                         accountId: newAccount._id,
                         accessToken: newAccount.accessToken,
@@ -145,14 +163,11 @@ router.post(
                         txndate: transaction1[i].date,
                         category: transaction1[i].category[0],
                       });
-                      transaction
-                        .save()
-                        .then((response) => {
-                          console.log(response);
-                        })
-                        .catch((err) => {
-                          console.log(err);
-                        });
+                    }
+                    try {
+                      txncoll.insertMany(alltxn);
+                    } catch (err) {
+                      console.log(err);
                     }
                   });
                 });
