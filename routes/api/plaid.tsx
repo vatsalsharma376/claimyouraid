@@ -164,11 +164,7 @@ router.post(
                         category: transaction1[i].category[0],
                       });
                     }
-                    try {
-                      txncoll.insertMany(alltxn);
-                    } catch (err) {
-                      console.log(err);
-                    }
+                    
                   });
                 });
               }
